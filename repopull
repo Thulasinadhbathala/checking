@@ -1,0 +1,26 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout GitHub Repository') {
+            steps {
+                script {
+                    // Specify the GitHub repository URL
+                    def gitHubRepoUrl = 'https://github.com/your-username/your-repository.git'
+
+                    // Checkout the GitHub repository
+                    checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: gitHubRepoUrl]]])
+                }
+            }
+        }
+
+        // Add additional stages for building, testing, etc.
+    }
+
+    post {
+        always {
+            // Cleanup: Remove the workspace
+            deleteDir()
+        }
+    }
+}
