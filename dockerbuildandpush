@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Define environment variables if needed
+        registryCredentials = 'docker-hub-credentials'
+        dockerImageName = 'your-docker-image'
+        dockerImageTag = 'latest'
+    }
+
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    try {
+                        // Build Docker image
+                        dockerImage = docker.build("${dockerImageName}:${dockerImageTag}", '.')
+                        
+                        // Optionally, tag the image with additional tags
+                        dockerImage.tag("${dockerImageName}:${dockerImageTag}-custom-tag")
+                        dockerImage.push()
+                    } catch (Exception e) {
+                        error("Failed to build Docker image. Error: ${e.message}")
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    try {
+                        // Push Docker image to registry
+                        docker.withRegistry('https://registry.example.com', registryCredentials) {
+                            dockerImage.push()
+                        }
+                    } catch (Exception e) {
+                        error("Failed to push Docker image to registry. Error: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Docker build and push successful!'
+        }
+        failure {
+            echo 'Docker build and push failed!'
+        }
+    }
+}
