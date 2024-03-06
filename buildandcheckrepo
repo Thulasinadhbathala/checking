@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    environment {
+        SONARQUBE_URL = 'http://your-sonarqube-server'
+        SONARQUBE_TOKEN = credentials('your-sonarqube-token-id') // Replace with your SonarQube token ID
+        MAVEN_HOME = tool 'Maven' // Make sure you have configured Maven in Jenkins as a tool named 'Maven'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build with Maven') {
+            steps {
+                script {
+                    // Set Maven tool
+                    def mvnHome = tool 'Maven'
+                    env.PATH = "${mvnHome}/bin:${env.PATH}"
+
+                    // Build with Maven
+                    sh 'mvn clean install'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    // Run SonarQube analysis
+                    withSonarQubeEnv('SonarQube') {
+                        sh "mvn sonar:sonar -Dsonar.host.url=${SONARQUBE_URL} -Dsonar.login=${SONARQUBE_TOKEN}"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Cleanup: Unset Maven tool and stop SonarQube scanner
+            deleteDir()
+        }
+    }
+}
